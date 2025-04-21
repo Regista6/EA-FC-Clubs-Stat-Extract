@@ -230,7 +230,7 @@ if __name__ == "__main__":
 
             # Parse the cleaned text as JSON
             extracted_data = json.loads(cleaned_text)
-
+            
             print("\n--- Extracted Data (Parsed JSON) ---")
             # print(json.dumps(extracted_data, indent=2)) # Pretty print
 
@@ -253,13 +253,11 @@ if __name__ == "__main__":
                 print(response.prompt_feedback)
             sys.exit(1) # Exit on other generation errors
 
-
         # 4. Save to Excel (only if data was successfully extracted and parsed)
         if extracted_data:
             success = save_to_excel(extracted_data, idx)
             if success:
                 print(f"\n--- End-to-End Process Complete ---")
-                # print(f"Data extracted and saved to: {OUTPUT_EXCEL_FILE}")
                 print(response.usage_metadata)
             else:
                 print("\n--- Process Completed with Errors During Excel Save ---")
