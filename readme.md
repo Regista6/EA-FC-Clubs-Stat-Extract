@@ -2,7 +2,7 @@
 
 ### How to use? 🔧
 
-1. Place your post-match Clubs player performance screenshots in the `Data` folder. Note: Make sure to delete any existing screenshots before adding new ones-ideally from the same player and the same match to ensure accurate extraction.
+1. Place your post-match Clubs player performance screenshots in the `Data` folder. Note: Make sure to delete any existing screenshots before adding new ones-ideally for the same player and the same match to ensure accurate extraction.
 ![Screenshot (279)](https://github.com/user-attachments/assets/7551a6de-4d9e-48b0-902d-159ff4059edc)
 ![Screenshot (280)](https://github.com/user-attachments/assets/9ea5875c-0e0d-442f-b35c-9eb29237cf8d)
 
