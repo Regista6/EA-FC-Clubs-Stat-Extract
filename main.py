@@ -1,4 +1,8 @@
-import google.generativeai as genai
+import warnings
+
+warnings.filterwarnings("ignore", category=UserWarning)
+
+from google import genai
 import os
 import sys
 import json
@@ -8,6 +12,7 @@ import time
 from glob import glob
 import shutil
 import input
+
 
 def merge_stat_files(folder_path, file_prefix, output_file):
     """
@@ -47,18 +52,20 @@ def merge_stat_files(folder_path, file_prefix, output_file):
             xl_file = pd.ExcelFile(file)
             if len(xl_file.sheet_names) >= 3:
                 df = xl_file.parse(xl_file.sheet_names[2])
-                combined_third_sheet = pd.concat([combined_third_sheet, df], ignore_index=True)
+                combined_third_sheet = pd.concat(
+                    [combined_third_sheet, df], ignore_index=True
+                )
             else:
                 print(f"Skipping {file}: Less than 3 sheets.")
         except Exception as e:
             print(f"Error reading {file}: {e}")
 
     # Drop duplicates by 'Stat' column
-    if 'Stat' in combined_third_sheet.columns:
-        combined_third_sheet = combined_third_sheet.drop_duplicates(subset='Stat')
+    if "Stat" in combined_third_sheet.columns:
+        combined_third_sheet = combined_third_sheet.drop_duplicates(subset="Stat")
 
     # Save all three sheets to a new Excel file with original names
-    with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
+    with pd.ExcelWriter(output_file, engine="xlsxwriter") as writer:
         sheet1.to_excel(writer, index=False, sheet_name=sheet_name_1)
         sheet2.to_excel(writer, index=False, sheet_name=sheet_name_2)
         combined_third_sheet.to_excel(writer, index=False, sheet_name=sheet_name_3)
@@ -66,7 +73,7 @@ def merge_stat_files(folder_path, file_prefix, output_file):
             sheet4.to_excel(writer, index=False, sheet_name=sheet_name_4)
 
     # Some Post-Processing
-    if 'Passing' in file_prefix or 'Possession' in file_prefix:
+    if "Passing" in file_prefix or "Possession" in file_prefix:
         all_sheets = pd.read_excel(output_file, sheet_name=None)
         df_target = all_sheets[sheet_name_3]
         exclude_values = [
@@ -75,11 +82,11 @@ def merge_stat_files(folder_path, file_prefix, output_file):
             "Over Attempted",
             "Over Completed",
             "Through Attempted",
-            "Through Completed"
+            "Through Completed",
         ]
-        df_target_filtered = df_target[~df_target['Stat'].isin(exclude_values)]
+        df_target_filtered = df_target[~df_target["Stat"].isin(exclude_values)]
         all_sheets[sheet_name_3] = df_target_filtered
-        with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
+        with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
             for sheet_name, sheet_df in all_sheets.items():
                 sheet_df.to_excel(writer, sheet_name=sheet_name, index=False)
 
@@ -103,11 +110,16 @@ def save_to_excel(data, idx, filename="game_stats.xlsx"):
         return False
 
     required_keys = [
-        "team_name", "featured_player", "player_list",
-        "detailed_stats_category", "selected_player_detailed_stats"
+        "team_name",
+        "featured_player",
+        "player_list",
+        "detailed_stats_category",
+        "selected_player_detailed_stats",
     ]
     if not all(key in data for key in required_keys):
-        print(f"Error saving to Excel: Input 'data' is missing one or more required keys: {required_keys}")
+        print(
+            f"Error saving to Excel: Input 'data' is missing one or more required keys: {required_keys}"
+        )
         return False
 
     try:
@@ -115,25 +127,33 @@ def save_to_excel(data, idx, filename="game_stats.xlsx"):
         filename = f"Stats_{detailed_stats_category}_{idx}.xlsx"
         print(f"\n--- Attempting to save data to '{filename}' ---")
 
-        with pd.ExcelWriter(f"{input.OUTPUT_TEMP_FOLDER}/{filename}", engine='openpyxl') as writer:
+        with pd.ExcelWriter(
+            f"{input.OUTPUT_TEMP_FOLDER}/{filename}", engine="openpyxl"
+        ) as writer:
             # Sheet 1: Summary
             summary_data = {
                 "Team Name": data.get("team_name", "N/A"),
-                "Featured Player Name": data.get("featured_player", {}).get("name", "N/A"),
-                "Featured Player OVR": data.get("featured_player", {}).get("overall_rating", "N/A"),
-                "Featured Player MR": data.get("featured_player", {}).get("match_rating", "N/A"),
-                "Detailed Stats Category": data.get("detailed_stats_category", "N/A")
+                "Featured Player Name": data.get("featured_player", {}).get(
+                    "name", "N/A"
+                ),
+                "Featured Player OVR": data.get("featured_player", {}).get(
+                    "overall_rating", "N/A"
+                ),
+                "Featured Player MR": data.get("featured_player", {}).get(
+                    "match_rating", "N/A"
+                ),
+                "Detailed Stats Category": data.get("detailed_stats_category", "N/A"),
             }
-            df_summary = pd.Series(summary_data).to_frame(name='Value')
-            df_summary.to_excel(writer, sheet_name='Summary', index=True, header=True)
+            df_summary = pd.Series(summary_data).to_frame(name="Value")
+            df_summary.to_excel(writer, sheet_name="Summary", index=True, header=True)
 
             # Sheet 2: Player List
             player_list = data.get("player_list", [])
             if player_list:
-                columns_order = ['position', 'name', 'match_rating', 'goals', 'assists']
+                columns_order = ["position", "name", "match_rating", "goals", "assists"]
                 df_players = pd.DataFrame(player_list)
                 df_players = df_players.reindex(columns=columns_order, fill_value=0)
-                df_players.to_excel(writer, sheet_name='Player List', index=False)
+                df_players.to_excel(writer, sheet_name="Player List", index=False)
             else:
                 print("Warning: Player list is empty. Skipping 'Player List' sheet.")
 
@@ -143,11 +163,19 @@ def save_to_excel(data, idx, filename="game_stats.xlsx"):
             featured_player_name = data.get("featured_player", {}).get("name", "N/A")
             stats_dict = detailed_stats_info.get("stats", {})
             if stats_dict:
-                df_detailed = pd.DataFrame(list(stats_dict.items()), columns=['Stat', 'Value'])
-                sheet_name_detailed = f"{detailed_stats_category}_{featured_player_name}"[:31] # Limit sheet name length
-                df_detailed.to_excel(writer, sheet_name=sheet_name_detailed, index=False)
+                df_detailed = pd.DataFrame(
+                    list(stats_dict.items()), columns=["Stat", "Value"]
+                )
+                sheet_name_detailed = (
+                    f"{detailed_stats_category}_{featured_player_name}"[:31]
+                )  # Limit sheet name length
+                df_detailed.to_excel(
+                    writer, sheet_name=sheet_name_detailed, index=False
+                )
             else:
-                 print("Warning: Detailed player stats dictionary is empty. Skipping detailed stats sheet.")
+                print(
+                    "Warning: Detailed player stats dictionary is empty. Skipping detailed stats sheet."
+                )
 
             # Sheet 4: Detailed team stats when stat category is Summary
             if detailed_stats_category == "Summary":
@@ -155,29 +183,41 @@ def save_to_excel(data, idx, filename="game_stats.xlsx"):
                 featured_team_name = data.get("team_name", "N/A")
                 team_stats_dict = selected_team_info.get("stats", {})
                 if team_stats_dict:
-                    df_detailed = pd.DataFrame(list(team_stats_dict.items()), columns=['Stat', 'Value'])
-                    sheet_name_detailed = f"{detailed_stats_category}_{featured_team_name}"[:31] # Limit sheet name length
-                    df_detailed.to_excel(writer, sheet_name=sheet_name_detailed, index=False)
+                    df_detailed = pd.DataFrame(
+                        list(team_stats_dict.items()), columns=["Stat", "Value"]
+                    )
+                    sheet_name_detailed = (
+                        f"{detailed_stats_category}_{featured_team_name}"[:31]
+                    )  # Limit sheet name length
+                    df_detailed.to_excel(
+                        writer, sheet_name=sheet_name_detailed, index=False
+                    )
                 else:
-                    print("Warning: Detailed team stats dictionary is empty. Skipping detailed stats sheet.")
+                    print(
+                        "Warning: Detailed team stats dictionary is empty. Skipping detailed stats sheet."
+                    )
 
         print(f"Successfully saved data to '{filename}'")
         return True
 
     except KeyError as e:
-         print(f"Error saving to Excel: Missing expected key in data structure: {e}")
-         return False
+        print(f"Error saving to Excel: Missing expected key in data structure: {e}")
+        return False
     except ImportError:
-        print("Error saving to Excel: pandas or openpyxl library not found. Please install using 'pip install pandas openpyxl'")
+        print(
+            "Error saving to Excel: pandas or openpyxl library not found. Please install using 'pip install pandas openpyxl'"
+        )
         return False
     except Exception as e:
         print(f"An unexpected error occurred while saving to Excel: {e}")
         return False
 
+
 def create_fresh_directory(path):
     if os.path.exists(path):
         shutil.rmtree(path)
     os.makedirs(path)
+
 
 # --- Main Execution ---
 if __name__ == "__main__":
@@ -186,19 +226,21 @@ if __name__ == "__main__":
     create_fresh_directory(input.OUTPUT_IMAGE_FOLDER)
 
     for idx, IMAGE_FILE in enumerate(os.listdir(input.INPUT_IMAGE_FOLDER)):
-        if not IMAGE_FILE.endswith('.png'):
+        if not IMAGE_FILE.endswith(".png"):
             continue
         time.sleep(3)
         # 1. Check and Configure API Key
-        if not os.environ.get('GEMINI_API_KEY'):
+        if not os.environ.get("GEMINI_API_KEY"):
             print("Error: API Key not found.")
-            print("Please set the GOOGLE_API_KEY environment variable or paste the key directly into the script.")
+            print(
+                "Please set the GOOGLE_API_KEY environment variable or paste the key directly into the script."
+            )
             sys.exit(1)
 
         try:
-            genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
+            gemini_api_key = os.environ.get("GEMINI_API_KEY")
+            genai_client = genai.Client(api_key=gemini_api_key)
             print(f"--- Using Model: {input.MODEL_NAME} ---")
-            model = genai.GenerativeModel(input.MODEL_NAME)
         except Exception as e:
             print(f"Error configuring Generative AI SDK or creating model: {e}")
             sys.exit(1)
@@ -208,8 +250,12 @@ if __name__ == "__main__":
             print(f"\n--- Loading Image: {input.INPUT_IMAGE_FOLDER}/{IMAGE_FILE} ---")
             img = Image.open(f"{input.INPUT_IMAGE_FOLDER}/{IMAGE_FILE}")
         except FileNotFoundError:
-            print(f"Error: Image file not found at '{input.INPUT_IMAGE_FOLDER}/{IMAGE_FILE}'")
-            print("Please make sure the image file exists in the same directory or provide the correct path.")
+            print(
+                f"Error: Image file not found at '{input.INPUT_IMAGE_FOLDER}/{IMAGE_FILE}'"
+            )
+            print(
+                "Please make sure the image file exists in the same directory or provide the correct path."
+            )
             sys.exit(1)
         except Exception as e:
             print(f"Error loading image: {e}")
@@ -220,38 +266,42 @@ if __name__ == "__main__":
         print("\n--- Sending Prompt and Image to Gemini ---")
         try:
             # Send both the text prompt and the image object
-            response = model.generate_content([input.GEMINI_PROMPT, img])
+            response = genai_client.models.generate_content(
+                model=input.MODEL_NAME, contents=[input.GEMINI_PROMPT, img]
+            )
 
             print("\n--- Gemini Raw Response Text ---")
 
             print("\n--- Attempting to Parse JSON ---")
             # Clean the response text (remove potential markdown backticks and surrounding whitespace)
-            cleaned_text = response.text.strip().strip('```json').strip('```').strip()
+            cleaned_text = response.text.strip().strip("```json").strip("```").strip()
 
             # Parse the cleaned text as JSON
             extracted_data = json.loads(cleaned_text)
-            
+
             print("\n--- Extracted Data (Parsed JSON) ---")
             # print(json.dumps(extracted_data, indent=2)) # Pretty print
 
         except json.JSONDecodeError as e:
             print(f"\n--- Error: Failed to parse Gemini response as JSON ---")
             print(f"JSONDecodeError: {e}")
-            print("The model might not have returned valid JSON. Check the 'Raw Response Text' above.")
+            print(
+                "The model might not have returned valid JSON. Check the 'Raw Response Text' above."
+            )
             print("You might need to adjust the prompt for stricter JSON output.")
             # Optionally print safety feedback if available
-            if hasattr(response, 'prompt_feedback') and response.prompt_feedback:
+            if hasattr(response, "prompt_feedback") and response.prompt_feedback:
                 print("\nPrompt Feedback (Safety Ratings):")
                 print(response.prompt_feedback)
-            sys.exit(1) # Exit if parsing fails
+            sys.exit(1)  # Exit if parsing fails
 
         except Exception as e:
             print(f"\n--- An Error Occurred During Generation or Parsing ---")
             print(f"Error: {e}")
-            if hasattr(response, 'prompt_feedback') and response.prompt_feedback:
+            if hasattr(response, "prompt_feedback") and response.prompt_feedback:
                 print("\nPrompt Feedback (Safety Ratings):")
                 print(response.prompt_feedback)
-            sys.exit(1) # Exit on other generation errors
+            sys.exit(1)  # Exit on other generation errors
 
         # 4. Save to Excel (only if data was successfully extracted and parsed)
         if extracted_data:
@@ -269,5 +319,5 @@ if __name__ == "__main__":
         merge_stat_files(
             folder_path=input.OUTPUT_TEMP_FOLDER,
             file_prefix=file_prefix,
-            output_file=f'{input.OUTPUT_IMAGE_FOLDER}/{file_prefix}_Final.xlsx'
+            output_file=f"{input.OUTPUT_IMAGE_FOLDER}/{file_prefix}_Final.xlsx",
         )

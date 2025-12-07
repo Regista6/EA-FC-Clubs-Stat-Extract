@@ -1,6 +1,8 @@
 # https://aistudio.google.com/apikey
 
-MODEL_NAME = 'gemini-2.0-flash' # Or 'gemini-1.5-flash-latest' OR 'gemini-1.5-pro-latest'
+MODEL_NAME = (
+    "gemini-2.5-flash"  # Or 'gemini-1.5-flash-latest' OR 'gemini-1.5-pro-latest'
+)
 
 INPUT_IMAGE_FOLDER = "Data"
 
@@ -8,7 +10,14 @@ OUTPUT_TEMP_FOLDER = "Data/Temp"
 
 OUTPUT_IMAGE_FOLDER = "Data/Final_Output"
 
-STAT_CATEGORIES = ["Stats_Shooting", "Stats_Possession", "Stats_Passing", "Stats_Goalkeeping", "Stats_Defending","Stats_Summary"]
+STAT_CATEGORIES = [
+    "Stats_Shooting",
+    "Stats_Possession",
+    "Stats_Passing",
+    "Stats_Goalkeeping",
+    "Stats_Defending",
+    "Stats_Summary",
+]
 
 GEMINI_PROMPT = """
 Analyze the provided image, which displays player performance statistics from a football game simulation (like FIFA or EA FC).
